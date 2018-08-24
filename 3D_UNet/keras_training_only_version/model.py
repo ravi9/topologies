@@ -20,18 +20,15 @@ import numpy as np
 import tensorflow as tf
 import keras as K
 
-def dice_coef(target, prediction, axis=(1, 2, 3), smooth=1e-5):
-	"""
-	Sorenson Dice
-	"""
-	intersection = tf.reduce_sum(prediction * target, axis=axis)
-	p = tf.reduce_sum(prediction, axis=axis)
-	t = tf.reduce_sum(target, axis=axis)
-	dice = (2. * intersection + smooth) / (t + p + smooth)
+def dice_coef(y_true, y_pred, axis=(1,2,3), smooth=1.):
+   intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
+   union = tf.reduce_sum(y_true + y_pred, axis=axis)
+   numerator = tf.constant(2.) * intersection + smooth
+   denominator = union + smooth
+   coef = numerator / denominator
+   return tf.reduce_mean(coef)
 
-	return tf.reduce_mean(dice)
-
-def dice_coef_loss(target, prediction, axis=(1,2,3), smooth=1e-5):
+def dice_coef_loss(target, prediction, axis=(1,2,3), smooth=1.):
 	"""
 	Sorenson Dice loss
 	Using -log(Dice) as the loss since it is better behaved.

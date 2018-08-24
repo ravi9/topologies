@@ -18,20 +18,18 @@
 import os.path
 import numpy as np
 import tensorflow as tf
+#from tensorflow import keras as K
 import keras as K
 
-def dice_coef(target, prediction, axis=(1, 2, 3), smooth=1e-5):
-	"""
-	Sorenson Dice
-	"""
-	intersection = tf.reduce_sum(prediction * target, axis=axis)
-	p = tf.reduce_sum(prediction, axis=axis)
-	t = tf.reduce_sum(target, axis=axis)
-	dice = (2. * intersection + smooth) / (t + p + smooth)
+def dice_coef(y_true, y_pred, axis=(1,2,3), smooth=1.0):
+   intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
+   union = tf.reduce_sum(y_true + y_pred, axis=axis)
+   numerator = tf.constant(2.) * intersection + smooth
+   denominator = union + smooth
+   coef = numerator / denominator
+   return tf.reduce_mean(coef)
 
-	return tf.reduce_mean(dice)
-
-def dice_coef_loss(target, prediction, axis=(1,2,3), smooth=1e-5):
+def dice_coef_loss(target, prediction, axis=(1,2,3), smooth=1.0):
 	"""
 	Sorenson Dice loss
 	Using -log(Dice) as the loss since it is better behaved.
@@ -148,7 +146,7 @@ def unet3D(input_img, use_upsampling=False, n_out=1, dropout=0.2,
 	conv7 = K.layers.Activation("relu")(conv7)
 	pred = K.layers.Conv3D(name="Prediction", filters=n_out, kernel_size=(1, 1, 1),
 					data_format=data_format, activation="sigmoid")(conv7)
-
+        
 	if return_model:
 		model = K.models.Model(inputs=[inputs], outputs=[pred])
 
@@ -199,7 +197,7 @@ def unet2D(input_tensor, use_upsampling=False,
 		conv5 = K.layers.Conv2D(name="conv5b", filters=256, **params)(conv5)
 		up6 = K.layers.concatenate([K.layers.UpSampling2D(name="up6", size=(2, 2))(conv5), conv4], axis=concat_axis)
 	else:
-		conv5 = K.layers.Conv2D(name="conv5b", filters=512, **params)(conv5)
+		conv5 = K.layers.Conv2D(name="conv5b", filters=256, **params)(conv5)
 		up6 = K.layers.concatenate([K.layers.Conv2DTranspose(name="transConv6", filters=256, data_format=data_format,
 						   kernel_size=(2, 2), strides=(2, 2), padding="same")(conv5), conv4], axis=concat_axis)
 

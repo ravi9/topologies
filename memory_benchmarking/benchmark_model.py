@@ -23,10 +23,18 @@ import time
 
 parser = argparse.ArgumentParser(
 	description="Benchmark 3D and 2D Convolution Models",add_help=True)
-parser.add_argument("--dim_length",
+parser.add_argument("--dim_lengthx",
 					type = int,
 					default=16,
-					help="Tensor cube length of side")
+					help="Tensor cube length of side x")
+parser.add_argument("--dim_lengthy",
+                                   	type = int,
+                                        default=16,
+                                        help="Tensor cube length of side y")
+parser.add_argument("--dim_lengthz",
+                                   	type = int,
+                                        default=16,
+                                        help="Tensor cube length of side z")
 parser.add_argument("--num_channels",
 					type = int,
 					default=1,
@@ -125,24 +133,24 @@ print("Keras API version: {}".format(K.__version__))
 if args.D2:  # Define shape of the tensors (2D)
 	dims = (1,2)
 	tensor_shape = [args.bz,
-					args.dim_length,
-					args.dim_length,
+					args.dim_lengthx,
+					args.dim_lengthy,
 					args.num_channels]
 	out_shape = [args.bz,
-					args.dim_length,
-					args.dim_length,
+					args.dim_lengthx,
+					args.dim_lengthy,
 					args.num_outputs]
 else:        # Define shape of the tensors (3D)
 	dims=(1,2,3)
 	tensor_shape = [args.bz,
-					args.dim_length,
-					args.dim_length,
-					args.dim_length,
+					args.dim_lengthx,
+					args.dim_lengthy,
+					args.dim_lengthz,
 					args.num_channels]
 	tensor_shape = [args.bz,
-					args.dim_length,
-					args.dim_length,
-					args.dim_length,
+					args.dim_lengthx,
+					args.dim_lengthy,
+					args.dim_lengthz,
 					args.num_outputs]
 
 # Optimize CPU threads for TensorFlow
@@ -213,8 +221,13 @@ else:
 # Initialize all variables
 init_op = tf.global_variables_initializer()
 init_l = tf.local_variables_initializer() # For TensorFlow metrics
+
 sess.run(init_op)
 sess.run(init_l)
+
+saver = tf.train.Saver()
+save_path = saver.save(sess, "./saved_model/model.ckpt")
+print("Model saved in path: %s" % save_path)
 
 # Freeze graph if inference
 if args.inference:

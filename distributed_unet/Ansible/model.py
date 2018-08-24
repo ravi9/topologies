@@ -26,12 +26,13 @@ from tensorflow import keras as K
 import settings
 from tqdm import tqdm
 
-def dice_coef(y_true, y_pred, smooth = 1.):
-
-	intersection = tf.reduce_sum(y_true * y_pred)
-	union_set = tf.reduce_sum(y_true) + tf.reduce_sum(y_pred)
-	dice = (tf.constant(2.) * intersection + smooth) / (union_set + smooth)
-	return dice
+def dice_coef(y_true, y_pred, smooth=1.0):
+   intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
+   union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
+   numerator = tf.constant(2.) * intersection + smooth
+   denominator = union + smooth
+   coef = numerator / denominator
+   return tf.reduce_mean(coef)
 
 
 def dice_coef_loss(y_true, y_pred, smooth = 1.):

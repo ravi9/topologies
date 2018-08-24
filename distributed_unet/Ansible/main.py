@@ -63,8 +63,10 @@ import multiprocessing
 import datetime
 
 # Unset proxy env variable to avoid gRPC errors
-del os.environ["http_proxy"]
-del os.environ["https_proxy"]
+if "http_proxy" in os.environ:
+   del os.environ["http_proxy"]
+if "https_proxy" in os.environ:
+   del os.environ["https_proxy"]
 
 # You can turn on the gRPC messages by setting the environment variables below
 #os.environ["GRPC_VERBOSITY"]="DEBUG"
