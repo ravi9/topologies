@@ -173,15 +173,15 @@ def main(_):
         # Horovod: save checkpoints only on worker 0 to prevent other workers from
         # corrupting them.
         if hvd.rank() == 0:
-            checkpoint_dir = "{}/{}-workers/{}".format(FLAGS.output_path,
-                            hvd.size(),
-                            datetime.now().strftime("%Y%m%d-%H%M%S"))
+            checkpoint_dir = os.path.join(FLAGS.output_path,
+                            "{}-workers".format(hvd.size()),
+                            "{}".format(datetime.now().strftime("%Y%m%d-%H%M%S")))
         else:
             checkpoint_dir = None
 
     else:
-        checkpoint_dir = "{}/no_hvd/{}".format(FLAGS.output_path,
-                        datetime.now().strftime("%Y%m%d-%H%M%S"))
+        checkpoint_dir = os.path.join(FLAGS.output_path, "no_hvd",
+                        "{}".format(datetime.now().strftime("%Y%m%d-%H%M%S")))
 
     # The MonitoredTrainingSession takes care of session initialization,
     # restoring from a checkpoint, saving to a checkpoint,

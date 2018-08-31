@@ -12,7 +12,10 @@ if [ "$1" == "-h" ]; then
   exit 0
 fi
 
-node_ips=${1:-hosts.txt}      # Default is the hosts.txt file
+# Get the directory of this script
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+node_ips=${1:-${BASEDIR}/hosts.txt}      # Default is the hosts.txt file
 export num_workers_per_node=${2:-2}  # Default workers per node
 export num_inter_threads=${3:-2} # Default to 2 inter_op threads
 
@@ -25,10 +28,6 @@ export num_processes=$(( $num_nodes * $num_workers_per_node )) # Total number of
 export ppr=$(( $num_workers_per_node / $num_sockets ))
 export pe=$(( $physical_cores / $ppr ))
 
-# Training input data path and output paths
-export data_path='/home/nfsshare/unet'
-export output_path='/home/nfsshare/unet'
-
 echo "Running $num_workers_per_node worker(s)/node on $num_nodes nodes..."
 
 echo Using $num_processes total workers.
@@ -39,6 +38,4 @@ mpirun --mca btl_tcp_if_include eth0  -np $num_processes \
 --map-by socket \
 -cpus-per-proc $physical_cores \
 --report-bindings \
---oversubscribe bash exec_multiworker.sh $ppr $num_inter_threads $data_path $output_path
-
-#mpirun -np $num_processes -H `cat $node_ips` --map-by socket -cpus-per-proc $physical_cores --report-bindings --oversubscribe bash exec_multiworker.sh $logdir $ppr $num_inter_threads
+--oversubscribe bash ${BASEDIR}/exec_multiworker.sh $ppr $num_inter_threads

@@ -147,25 +147,21 @@ import settings
 
 
 def dice_coef(y_true, y_pred, smooth=1.0):
-    intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
-    union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
-    numerator = tf.constant(2.) * intersection + smooth
-    denominator = union + smooth
-    coef = numerator / denominator
-    return tf.reduce_mean(coef)
+   intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
+   union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
+   numerator = tf.constant(2.) * intersection + smooth
+   denominator = union + smooth
+   coef = numerator / denominator
+   return tf.reduce_mean(coef)
 
 
 def dice_coef_loss(y_true, y_pred, smooth=1.0):
 
-    smooth *= args.batch_size
-    y_true_f = K.backend.flatten(y_true)
-    y_pred_f = K.backend.flatten(y_pred)
-    intersection = K.backend.sum(y_true_f * y_pred_f)
-    loss = -K.backend.log(2.0 * intersection + smooth) + \
-        K.backend.log((K.backend.sum(y_true_f) +
-                       K.backend.sum(y_pred_f) + smooth))
-
-    return loss
+	intersection = tf.reduce_sum(y_true * y_pred)
+	union_set = tf.reduce_sum(y_true) + tf.reduce_sum(y_pred)
+	loss = -tf.log(tf.constant(2.) * intersection + smooth) + \
+		tf.log(union_set + smooth)
+	return loss
 
 
 def unet_model(args, dropout=0.2, final=False):
@@ -173,6 +169,8 @@ def unet_model(args, dropout=0.2, final=False):
     U-Net model definition
     """
 
+    bn = True # Use Batch Normalization
+    
     if args.use_upsampling:
         print("Using UpSampling2D")
     else:
@@ -192,31 +190,41 @@ def unet_model(args, dropout=0.2, final=False):
 
     # Transposed convolution parameters
     params_trans = dict(data_format=data_format,
-                        kernel_size=(3, 3), strides=(2, 2),
+                        kernel_size=(2, 2), strides=(2, 2),
                         padding="same")
 
     conv1 = K.layers.Conv2D(name="conv1a", filters=32, **params)(inputs)
+    if (bn) : conv1 = K.layers.BatchNormalization()(conv1)
     conv1 = K.layers.Conv2D(name="conv1b", filters=32, **params)(conv1)
+    if (bn) : conv1 = K.layers.BatchNormalization()(conv1)
     pool1 = K.layers.MaxPooling2D(name="pool1", pool_size=(2, 2))(conv1)
 
     conv2 = K.layers.Conv2D(name="conv2a", filters=64, **params)(pool1)
+    if (bn) : conv2 = K.layers.BatchNormalization()(conv2)
     conv2 = K.layers.Conv2D(name="conv2b", filters=64, **params)(conv2)
+    if (bn) : conv2 = K.layers.BatchNormalization()(conv2)
     pool2 = K.layers.MaxPooling2D(name="pool2", pool_size=(2, 2))(conv2)
 
     conv3 = K.layers.Conv2D(name="conv3a", filters=128, **params)(pool2)
+    if (bn) : conv3 = K.layers.BatchNormalization()(conv3)
     conv3 = K.layers.Dropout(dropout)(conv3)
     conv3 = K.layers.Conv2D(name="conv3b", filters=128, **params)(conv3)
+    if (bn) : conv3 = K.layers.BatchNormalization()(conv3)
 
     pool3 = K.layers.MaxPooling2D(name="pool3", pool_size=(2, 2))(conv3)
 
     conv4 = K.layers.Conv2D(name="conv4a", filters=256, **params)(pool3)
+    if (bn) : conv4 = K.layers.BatchNormalization()(conv4)
     conv4 = K.layers.Dropout(dropout)(conv4)
     conv4 = K.layers.Conv2D(name="conv4b", filters=256, **params)(conv4)
+    if (bn) : conv4 = K.layers.BatchNormalization()(conv4)
 
     pool4 = K.layers.MaxPooling2D(name="pool4", pool_size=(2, 2))(conv4)
 
     conv5 = K.layers.Conv2D(name="conv5a", filters=512, **params)(pool4)
+    if (bn) : conv5 = K.layers.BatchNormalization()(conv5)
     conv5 = K.layers.Conv2D(name="conv5b", filters=512, **params)(conv5)
+    if (bn) : conv5 = K.layers.BatchNormalization()(conv5)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up6", size=(2, 2))(conv5)
@@ -226,7 +234,9 @@ def unet_model(args, dropout=0.2, final=False):
     up6 = K.layers.concatenate([up, conv4], axis=concat_axis)
 
     conv6 = K.layers.Conv2D(name="conv6a", filters=256, **params)(up6)
+    if (bn) : conv6 = K.layers.BatchNormalization()(conv6)
     conv6 = K.layers.Conv2D(name="conv6b", filters=256, **params)(conv6)
+    if (bn) : conv6 = K.layers.BatchNormalization()(conv6)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up7", size=(2, 2))(conv6)
@@ -236,7 +246,9 @@ def unet_model(args, dropout=0.2, final=False):
     up7 = K.layers.concatenate([up, conv3], axis=concat_axis)
 
     conv7 = K.layers.Conv2D(name="conv7a", filters=128, **params)(up7)
+    if (bn) : conv7 = K.layers.BatchNormalization()(conv7)
     conv7 = K.layers.Conv2D(name="conv7b", filters=128, **params)(conv7)
+    if (bn) : conv7 = K.layers.BatchNormalization()(conv7)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up8", size=(2, 2))(conv7)
@@ -246,7 +258,9 @@ def unet_model(args, dropout=0.2, final=False):
     up8 = K.layers.concatenate([up, conv2], axis=concat_axis)
 
     conv8 = K.layers.Conv2D(name="conv8a", filters=64, **params)(up8)
+    if (bn) : conv8= K.layers.BatchNormalization()(conv8)
     conv8 = K.layers.Conv2D(name="conv8b", filters=64, **params)(conv8)
+    if (bn) : conv8= K.layers.BatchNormalization()(conv8)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up9", size=(2, 2))(conv8)
@@ -256,7 +270,9 @@ def unet_model(args, dropout=0.2, final=False):
     up9 = K.layers.concatenate([up, conv1], axis=concat_axis)
 
     conv9 = K.layers.Conv2D(name="conv9a", filters=32, **params)(up9)
+    if (bn) : conv9 = K.layers.BatchNormalization()(conv9)
     conv9 = K.layers.Conv2D(name="conv9b", filters=32, **params)(conv9)
+    if (bn) : conv9 = K.layers.BatchNormalization()(conv9)
 
     num_output_channels = 1
     prediction = K.layers.Conv2D(name="PredictionMask",

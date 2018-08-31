@@ -54,7 +54,7 @@ print("Converting BraTS raw Nifti data files to training and testing" \
         " Numpy data files.")
 print(args)
 
-save_dir = os.path.join(args.save_path, "{}x{}".format(args.resize, args.resize))
+save_dir = os.path.join(args.save_path, "{}x{}/".format(args.resize, args.resize))
 
 # Create directory
 try:
